@@ -1,0 +1,27 @@
+==368== Cachegrind, a high-precision tracing profiler
+==368== Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.
+==368== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==368== Command: /mnt/d/antigravity/btp1/gemm 2048
+==368== 
+--368-- warning: L3 cache found, using its data for the LL simulation.
+--368-- warning: specified LL cache: line_size 64  assoc 8  total_size 12,582,912
+--368-- warning: simulated LL cache: line_size 64  assoc 12  total_size 12,582,912
+Allocating matrices of size 2048x2048...
+Computing Blocked GEMM...
+Computation complete. C[0] = 0
+==368== 
+==368== I refs:        21,008,768,999
+==368== I1  misses:             2,277
+==368== LLi misses:             2,221
+==368== I1  miss rate:           0.00%
+==368== LLi miss rate:           0.00%
+==368== 
+==368== D refs:         7,566,137,083  (5,397,203,742 rd   + 2,168,933,341 wr)
+==368== D1  misses:       692,344,642  (  692,080,300 rd   +       264,342 wr)
+==368== LLd misses:        11,500,669  (   11,237,055 rd   +       263,614 wr)
+==368== D1  miss rate:            9.2% (         12.8%     +           0.0%  )
+==368== LLd miss rate:            0.2% (          0.2%     +           0.0%  )
+==368== 
+==368== LL refs:          692,346,919  (  692,082,577 rd   +       264,342 wr)
+==368== LL misses:         11,502,890  (   11,239,276 rd   +       263,614 wr)
+==368== LL miss rate:             0.0% (          0.0%     +           0.0%  )

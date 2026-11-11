@@ -1,0 +1,99 @@
+\documentclass[aspectratio=169]{beamer}
+\usetheme{Madrid}
+\usecolortheme{default}
+\usepackage{graphicx}
+\usepackage{booktabs}
+
+\title{LLM Hardware Acceleration via MRB-DRAM}
+\subtitle{Processing-In-Memory Architecture for Matrix Multiplication}
+\author{Your Name}
+\institute{Department of Computer Science and Engineering \\ IIT Guwahati}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+    \titlepage
+\end{frame}
+
+\begin{frame}{The LLM ``Memory Wall'' (Problem Statement)}
+    \begin{itemize}
+        \item Over 90\% of LLM inference (token generation) is spent on GEMM workloads.
+        \item \textbf{Cachegrind profiling} reveals massive L3 cache thrashing for matrices exceeding LLC capacity.
+        \item A standard CPU is constrained by the external Memory Bus (e.g., 50 GB/s), severely bottlenecking execution even with massive AVX compute power.
+    \end{itemize}
+    \vspace{0.3cm}
+    \begin{center}
+        % Replace with screenshot of Mermaid Diagram 1
+        \includegraphics[width=0.7\textwidth]{diagram1_memory_wall.png}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Methodology: Establishing a ``Bulletproof'' CPU Baseline}
+    \begin{itemize}
+        \item Cachegrind on an $8192 \times 8192$ GEMM yields \textbf{1.34 Trillion instructions} and \textbf{105 Million L3 misses}.
+        \item Calculating exact clock cycles (at 3.6GHz) results in an execution time of \textbf{$\sim$14.5 minutes} (single-threaded).
+        \item \textbf{The Academic Trap:} Comparing a massively parallel PIM to a single-threaded CPU is an unfair comparison.
+        \item \textbf{The Bulletproof Assumption:} We grant the CPU ``infinite compute cores.'' We assume execution is bounded \textit{strictly} by the 50 GB/s physical memory bus transferring the 47.1 GB of cache misses.
+        \item \textbf{Resulting Baseline:} Minimum theoretical time = \textbf{942 ms}.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{The Solution: MRB-DRAM Architecture}
+    \begin{itemize}
+        \item Shift the computation \textit{into} the DRAM bank to completely bypass the external memory bus.
+        \item Use Multiple Row Buffers (MRB) to hold operands locally.
+        \item Total external bus traffic is reduced by \textbf{183x} (47 GB down to 256 MB).
+    \end{itemize}
+    \vspace{0.1cm}
+    \begin{center}
+        % Replace with screenshot of Mermaid Diagram 2
+        \includegraphics[height=0.55\textheight]{diagram2_mrb_dram.png}
+    \end{center}
+\end{frame}
+
+\begin{frame}{2D-Grid Outer-Product Mapping (Stationary A, Streaming B)}
+    \begin{itemize}
+        \item \textbf{Data Mapping:} Each bank computes a $2048 \times 2048$ block of C using local $A/4$ and $B/4$ blocks.
+        \item \textbf{Execution Flow:} A chunk of Matrix A is fixed in \textbf{SRB1}. We sweep through the corresponding rows of Matrix B.
+        \item No area-expensive adder-tree required; enables massive parallelism across 16 banks.
+    \end{itemize}
+    \vspace{0.3cm}
+    \begin{center}
+        % Replace with screenshot of Mermaid Diagram 3
+        \includegraphics[width=0.8\textwidth]{diagram3_outer_product.png}
+    \end{center}
+\end{frame}
+
+\begin{frame}{SRB Pipelining \& The 64-ALU Sweet Spot}
+    \begin{itemize}
+        \item While the fixed A chunk sits in SRB1, we pipeline the fetches of B rows (Double Buffering).
+        \item While the ALU computes on SRB2, the memory array precharges and activates the \textit{next} B row into SRB3.
+        \item Execution time is $\max(\text{Memory Latency}, \text{Compute Latency})$.
+        \item \textbf{Architectural Discovery:} 128 ALUs is overkill. \textbf{64 ALUs} perfectly balances the pipeline (32 compute cycles $\approx$ 30 DRAM cycles), reaching 100\% hardware efficiency.
+    \end{itemize}
+    \vspace{0.1cm}
+    \begin{center}
+        % Replace with screenshot of Mermaid Diagram 4
+        \includegraphics[height=0.4\textheight]{diagram4_pipeline.png}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Results \& Conclusion}
+    \begin{table}[]
+        \centering
+        \begin{tabular}{@{}llc@{}}
+        \toprule
+        \textbf{Architecture} & \textbf{Execution Time} & \textbf{Speedup} \\ \midrule
+        Baseline CPU (Infinite Compute) & 942 ms & 1.00x \\
+        PIM-DRAM (No Pipeline) & 772 ms & 1.22x \\
+        \textbf{PIM-DRAM (Pipelined 64-ALU)} & \textbf{503 ms} & \textbf{1.87x} \\ \bottomrule
+        \end{tabular}
+    \end{table}
+    \vspace{0.5cm}
+    \begin{itemize}
+        \item \textbf{Conclusion:} MRB-DRAM completely solves the memory wall for LLMs. By proving it outperforms the theoretical absolute limit of a standard CPU architecture, we validate PIM as a necessary evolution for matrix operations.
+    \end{itemize}
+\end{frame}
+
+\end{document}

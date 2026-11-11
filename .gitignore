@@ -1,0 +1,28 @@
+# Compiled outputs and dependencies
+ramulator2/build/
+ramulator2/ext/
+ramulator2/libramulator.so
+ramulator2/scripts/cpu_gemm_naive
+ramulator2/scripts/cpu_gemm_opt
+ramulator2/scripts/cpu_gemv_naive
+ramulator2/scripts/cpu_gemv_opt
+*.so
+*.o
+*.a
+*.exe
+
+# Python caches
+__pycache__/
+*.py[cod]
+.venv/
+
+# Profiling, trace, and LaTeX build outputs
+cachegrind.out*
+*.trace
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.pdf
